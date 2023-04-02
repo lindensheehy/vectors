@@ -125,6 +125,9 @@ class Vec3:
             self.z *= float(factor)
         except ValueError:
             raise Exception(f"Cannot scale Vec3 by factor of {factor} (type {type(factor)}) (should be type int or float)")
+        
+        self.magnitude = math.sqrt((self.x ** 2) + (self.y ** 2) + (self.z ** 2))
+
         return self
 
     def normalise(self, magnitude: float = 1):
@@ -136,8 +139,6 @@ class Vec3:
             self.scale( magnitude / self.magnitude )
         except ValueError:
             raise Exception(f"Cannot normalise Vec3 to a magnitude of {magnitude} (type {type(magnitude)}) (should be type int or float)")
-        
-        self.magnitude = math.sqrt((self.x ** 2) + (self.y ** 2) + (self.z ** 2))
 
         return self
 
