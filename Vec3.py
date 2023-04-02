@@ -137,7 +137,7 @@ class Vec3:
         except ValueError:
             raise Exception(f"Cannot normalise Vec3 to a magnitude of {magnitude} (type {type(magnitude)}) (should be type int or float)")
         
-        self.magnitude = math.sqrt((x ** 2) + (y ** 2) + (z ** 2))
+        self.magnitude = math.sqrt((self.x ** 2) + (self.y ** 2) + (self.z ** 2))
 
         return self
 
