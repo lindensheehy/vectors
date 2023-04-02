@@ -137,11 +137,13 @@ class Vec3:
         except ValueError:
             raise Exception(f"Cannot normalise Vec3 to a magnitude of {magnitude} (type {type(magnitude)}) (should be type int or float)")
         
-        return
+        self.magnitude = math.sqrt((x ** 2) + (y ** 2) + (z ** 2))
+
+        return self
 
     def distance_to(self, other):
         '''
-        Returns the distance between one position and another
+        Returns the distance between one position and another as a Vec3 object
         '''
 
         if (type(other) != Vec3):
