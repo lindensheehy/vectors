@@ -1,5 +1,4 @@
 import math
-from Vec2 import Vec2
 
 class Vec3:
     '''
@@ -16,7 +15,7 @@ class Vec3:
         try:
             self.x = float(x)
             self.y = float(y)
-            self.x = float(z)
+            self.z = float(z)
         except ValueError:
             raise Exception(f"Cannot create Vec3 object with x = {x} ({type(x)}), y = {y} ({type(y)}), and z = {z} ({type(z)})")
 
@@ -41,7 +40,7 @@ class Vec3:
         Allows Vec3 objects to be compared. If all x, y and z components are the same between the two vectors, it will return True
         '''
         try:
-            return (self.x == other.x) and (self.y == other.y) and(self.z == other.z)
+            return (self.x == other.x) and (self.y == other.y) and (self.z == other.z)
         except AttributeError:
             return False
 
@@ -84,17 +83,17 @@ class Vec3:
         except ValueError:
             raise Exception(f"Cannot multiply Vec3 by {other} (type {type(other)}) (should be type int or float)")
 
-        return self.copy().scale(other)
+        return self.copy().scale(factor)
 
     def __truediv__(self, other: float):
         '''
-        (Vec2, float) -> Vec2
+        (Vec3, float) -> Vec3
         Overrides python division to do vector scale by 1/other
         '''
         try:
             factor = 1 / float(other)
         except ValueError:
-            raise Exception(f"Cannot divide Vec2 by {other} (type {type(other)}) (should be type int or float)")
+            raise Exception(f"Cannot divide Vec3 by {other} (type {type(other)}) (should be type int or float)")
         
         return self.copy().scale(factor)
 
@@ -146,11 +145,23 @@ class Vec3:
         '''
         Returns the distance between one position and another as a Vec3 object
         '''
+        
+        try:
+            return math.sqrt(((self.x - other.x) ** 2) + ((self.y - other.y) ** 2) + ((self.z - other.z) ** 2))
+        except AttributeError:
+            raise Exception(f"Cannot get distance when between Vec3 and type {type(other)} (should be Vec3)")
 
-        if (type(other) != Vec3):
-            raise Exception(f"Cannot get distance when other is not a Vec3 object")
-
-        return math.sqrt(((self.x - other.x) ** 2) + ((self.y - other.y) ** 2) + ((self.z - other.z) ** 2))
+    def midpoint(self, other):
+        '''
+        Returns the midpoint between 2 vectors. Just averages out the 3 components
+        '''
+        try:
+            x = (self.x + other.x) / 2
+            y = (self.y + other.y) / 2
+            z = (self.z + other.z) / 2
+            return Vec3(x, y, z)
+        except AttributeError:
+            raise Exception(f"Cant find midpoint between Vec3 and type {type(other)} (should be Vec3)")
 
     def in_bounds(self, bounds: tuple) -> bool:
         '''
@@ -187,65 +198,93 @@ class Vec3:
         Returns the dot product of two vectors
         '''
 
-        if (type(other) != Vec3):
-            raise Exception(f"Cannot find dot product of Vec3 and {type(other)}")
-
-        return (self.x * other.x) + (self.y * other.y) + (self.z * other.z)
+        try:
+            return (self.x * other.x) + (self.y * other.y) + (self.z * other.z)
+        except AttributeError:
+            raise Exception(f"Cannot find dot product of Vec3 and type {type(other)} (should be Vec3)")
     
     def cross_product(self, other):
         '''
         (Vec3, Vec3) -> Vec3
         Returns the cross product of self and other which will be a vector perpendicular to the given ones
         '''
-
-        if (type(other) != Vec3):
-            raise Exception(f"Cannot find dot product of Vec3 and {type(other)}")
         
-        x = (self.y * other.z) - (self.z * other.y)
-        y = (self.z * other.x) - (self.x * other.z)
-        z = (self.x * other.y) - (self.y * other.x)
-        return Vec3(x, y, z)
+        try:
+            x = (self.y * other.z) - (self.z * other.y)
+            y = (self.z * other.x) - (self.x * other.z)
+            z = (self.x * other.y) - (self.y * other.x)
+            return Vec3(x, y, z)
+        except AttributeError:
+            raise Exception(f"Cannot find cross product of Vec3 and {type(other)} (should be Vec3)")
 
     def angle_to(self, other) -> float:
         '''
         (Vec3, Vec3) -> float
         Returns the angle between 2 vectors in 3d space (along the plane they share)
         '''
-
-        if (type(other) != Vec3):
-            raise Exception(f"Cannot find dot product of Vec3 and {type(other)}")
     
         try:
             return math.degrees(math.acos((self.dot_product(other)) / (self.magnitude * other.magnitude)))
+        
+        # Other is not type Vec3
+        except AttributeError:
+            raise Exception(f"Cannot find dot product of Vec3 and {type(other)}")
+        
+        # Out of bounds of acos function. (This happens when both magnitudes are the same but floating points errors make the ratio slightly higher than 1)
+        except ValueError:
+            return 180
+ 
+        # if one or both of the vectors is (0, 0, 0)
         except ZeroDivisionError:
-            print("divided by zero")
+            print("divided by zero") # this shouldnt happen so i want to see if it does
             return 0
 
-    def rotate(self, yaw: float = 0, pitch: float = 0, around = None):
+    def rotate(self, yaw: float = 0, pitch: float = 0, roll: float = 0, around = None):
         '''
         (Vec3, float, float, Vec3) -> Vec3
         Rotates self by a yaw and pitch around some point and returns the new location
         '''
 
+        # This function re-uses code from vec2.rotate(), but i wanted Vec2 and Vec3 to be independent from each other so i rewrote it
+
+        if around is None:
+            around = Vec3(0, 0, 0)
+
+        # relative position
+        rel = Vec3(self.x - around.x, self.y - around.y, self.z - around.z)
+
         try:
 
-            if around == None:
-                around = Vec3(0, 0, 0)
-
             if yaw != 0:
-                self.x, self.z = Vec2(self.x, self.z).rotate(yaw, Vec2(around.x, around.z))
+
+                # Trig values
+                sin = math.sin(math.radians(yaw))
+                cos = math.cos(math.radians(yaw))
+
+                # New components
+                self.x = (cos * rel.x) - (sin * rel.z) + around.x
+                self.z = (cos * rel.z) + (sin * rel.x) + around.z
 
             # If pitch is not 0, rotate point along the plane shared between the vector and the y axis
             if pitch != 0:
 
-                dist_from_y_axis = math.sqrt((self.x - around.x) ** 2 + (self.z - around.z) ** 2)
+                # Trig values
+                sin = math.sin(math.radians(pitch))
+                cos = math.cos(math.radians(pitch))
 
-                pitch_vec = Vec2(dist_from_y_axis, self.y)
-                pitch_vec.rotate(pitch)
+                # New components
+                self.y = (cos * rel.y) - (sin * rel.z) + around.y
+                self.z = (cos * rel.z) + (sin * rel.y) + around.z
 
-                self.x *= pitch_vec.x / dist_from_y_axis
-                self.z *= pitch_vec.x / dist_from_y_axis
-                self.y = pitch_vec.y
+            if roll != 0:
+
+                # Trig values
+                sin = math.sin(math.radians(roll))
+                cos = math.cos(math.radians(roll))
+
+                # New components
+                self.x = (cos * rel.x) - (sin * rel.y) + around.x
+                self.y = (cos * rel.y) + (sin * rel.x) + around.y
 
             return self
 

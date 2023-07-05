@@ -2,7 +2,7 @@ import math
 
 class Vec2:
     '''
-    Class used for 2 dimensional vectors or positions
+    Class used for 2 dimensional vectors (effectively just a set of 2d coordinates)
     Contains functions which allow it to be treated similar to a tuple but with attributes x and y for readability
     '''
 
@@ -18,7 +18,7 @@ class Vec2:
         except ValueError:
             raise Exception(f"Cannot create Vec2 object with x = {x} ({type(x)}), and y={y} ({type(y)})")
 
-        self.magnitude = math.sqrt((x ** 2) + (y ** 2))
+        self.magnitude = math.sqrt((self.x ** 2) + (self.y ** 2))
 
     # Built in function overrides
     def __repr__(self):
@@ -30,18 +30,18 @@ class Vec2:
 
     def __hash__(self):
         '''
-        Allows sets to properly use Vec3 objects
+        Allows sets to properly use Vec2 objects
         '''
         return hash(self.__repr__())
 
     def __eq__(self, other):
         '''
-        Allows Vec2 objects to be compared. If both x and y components are equal it will return True
+        Allows Vec2 objects to be compared ( using == ). If both x and y components are equal it will return True
         '''
         try:
             return (self.x == other.x) and (self.y == other.y)
         except AttributeError:
-            # other must not be an instance of Vec2
+            # other must not be a Vec2 object
             return False
 
     def __add__(self, other):
@@ -53,7 +53,7 @@ class Vec2:
             x = self.x + other.x
             y = self.y + other.y
         except AttributeError:
-            raise Exception(f"Cannot add type {type(self)} and type {type(other)} (other should be type Vec2)")
+            raise Exception(f"Cannot add type {type(self)} and type {type(other)} (both should be type Vec2)")
         
         return Vec2(x, y)
 
@@ -66,7 +66,8 @@ class Vec2:
             x = self.x - other.x
             y = self.y - other.y
         except AttributeError:
-            raise Exception(f"Cannot subtract type {type(self)} and type {type(other)} (other should be type Vec2)")
+            raise Exception(f"Cannot subtract type {type(self)} and type {type(other)} (both should be type Vec2)")
+        
         return Vec2(x, y)
 
     def __mul__(self, other: float):
@@ -85,17 +86,18 @@ class Vec2:
     def __truediv__(self, other: float):
         '''
         (Vec2, float) -> Vec2
-        Overrides python division to do vector scale by 1/other
+        Overrides python division to do vector scaling by a factor of 1/other
         '''
         try:
             factor = 1 / float(other)
         except ValueError:
             raise Exception(f"Cannot divide Vec2 by {other} (type {type(other)}) (should be type int or float)")
+        
         return self.copy().scale(factor)
 
     def __iter__(self):
         '''
-        This function allows the Vec3 object to be treated as a tuple (x, y)
+        This function allows the Vec2 object to be treated as a tuple (x, y)
         '''
         yield self.x
         yield self.y
@@ -115,10 +117,9 @@ class Vec2:
         try:
             self.x *= float(factor)
             self.y *= float(factor)
+            self.magnitude *= float(factor)
         except ValueError:
             raise Exception(f"Cannot scale a Vec2 object by a factor of: {factor} ({type(factor)})")
-        
-        self.magnitude = math.sqrt((self.x ** 2) + (self.y ** 2))
         
         return self
 
@@ -140,10 +141,22 @@ class Vec2:
         Returns the distance between one position and another
         '''
 
-        if (type(other) != Vec2):
-            raise Exception(f"Cannot get distance when other is not a Vec2 object")
+        try:
+            return math.sqrt(((self.x - other.x) ** 2) + ((self.y - other.y) ** 2))
+        except AttributeError:
+            raise Exception(f"Cannot get distance between Vec2 type and {type(other)} type")
 
-        return math.sqrt(((self.x - other.x) ** 2) + ((self.y - other.y) ** 2))
+    def midpoint(self, other):
+        '''
+        Returns the midpoint between 2 vectors. Just averages out the 2 components
+        '''
+        try:
+            return Vec2(
+                (self.x + other.x) / 2,
+                (self.y + other.y) / 2 
+            )
+        except AttributeError:
+            raise Exception(f"Cant find midpoint between Vec3 and type {type(other)}")
 
     def in_bounds(self, bounds: tuple) -> bool:
         '''
@@ -160,7 +173,7 @@ class Vec2:
         high = bounds[1]
 
         if (type(low) != Vec2) or (type(high) != Vec2):
-            raise Exception(f"({low} - {high}) is not a valid set of bounds (both endpoints must be Vec2 objects)")
+            raise Exception(f"({low} - {high}) is not a valid set of bounds (both endpoints must be Vec2 objects) (currently low ({type(low)} and high ({type(high)})))")
         
         if (low.x > high.x) or (low.y > high.y):
             raise Exception(f"Each coordinate of the low endpoint must be less than its high endpoint counterpart. low = {low} , high = {high}")
@@ -179,7 +192,7 @@ class Vec2:
         '''
 
         if (type(other) != Vec2):
-            raise Exception(f"Cannot find dot product of {Vec2} and {type(other)}")
+            raise Exception(f"Cannot find dot product of Vec2 and {type(other)}")
 
         return (self.x * other.x) + (self.y * other.y)
 
@@ -197,7 +210,7 @@ class Vec2:
                 return self
 
             # Make the around parameter be the origin if no argument was passed
-            if around == None:
+            if around is None:
                 around = Vec2(0, 0)
 
             # Relative (x, y) location to the "around" point
